@@ -1,5 +1,5 @@
-﻿# ConvertTo-Jpeg - Converts RAW (and other) image files to the widely-supported JPEG format
-# https://github.com/DavidAnson/ConvertTo-Jpeg
+﻿# ConvertTo-Heic - Converts image files to the efficient HEIC format
+# https://github.com/DavidAnson/ConvertTo-Heic
 
 Param (
     [Parameter(
@@ -8,15 +8,10 @@ Param (
         ValueFromPipeline = $true,
         ValueFromPipelineByPropertyName = $true,
         ValueFromRemainingArguments = $true,
-        HelpMessage = "Array of image file names to convert to JPEG")]
+        HelpMessage = "Array of image file names to convert to HEIC")]
     [Alias("FullName")]
     [String[]]
-    $Files,
-
-    [Parameter(
-        HelpMessage = "Fix extension of JPEG files without the .jpg extension")]
-    [Switch]
-    $FixExtensionIfJpeg
+    $Files
 )
 
 Begin
@@ -46,6 +41,13 @@ Begin
 
 Process
 {
+    # Check dependencies
+    if (([Windows.Graphics.Imaging.BitmapEncoder]::HeifEncoderId -eq $null) -or ([Windows.Graphics.Imaging.BitmapDecoder]::HeifDecoderId -eq $null))
+    {
+        Write-Error "HEIC encoder/decoder not present. Please see README.md for more information."
+        Exit
+    }
+
     # Summary of imaging APIs: https://docs.microsoft.com/en-us/windows/uwp/audio-video-camera/imaging
     foreach ($file in $Files)
     {
@@ -66,30 +68,19 @@ Process
                 Write-Host " [Unsupported]"
                 continue
             }
-            if ($decoder.DecoderInformation.CodecId -eq [Windows.Graphics.Imaging.BitmapDecoder]::JpegDecoderId)
+            if ($decoder.DecoderInformation.CodecId -eq [Windows.Graphics.Imaging.BitmapDecoder]::HeifDecoderId)
             {
-                $extension = $inputFile.FileType
-                if ($FixExtensionIfJpeg -and ($extension -ne ".jpg") -and ($extension -ne ".jpeg"))
-                {
-                    # Rename JPEG-encoded files to have ".jpg" extension
-                    $newName = $inputFile.Name -replace ($extension + "$"), ".jpg"
-                    AwaitAction ($inputFile.RenameAsync($newName))
-                    Write-Host " => $newName"
-                }
-                else
-                {
-                    # Skip JPEG-encoded files
-                    Write-Host " [Already JPEG]"
-                }
+                # Skip HEIC-encoded files
+                Write-Host " [Already HEIC]"
                 continue
             }
             $bitmap = AwaitOperation ($decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])
 
             # Write SoftwareBitmap to output file
-            $outputFileName = $inputFile.Name + ".jpg";
+            $outputFileName = $inputFile.Name + ".heic";
             $outputFile = AwaitOperation ($inputFolder.CreateFileAsync($outputFileName, [Windows.Storage.CreationCollisionOption]::ReplaceExisting)) ([Windows.Storage.StorageFile])
             $outputStream = AwaitOperation ($outputFile.OpenAsync([Windows.Storage.FileAccessMode]::ReadWrite)) ([Windows.Storage.Streams.IRandomAccessStream])
-            $encoder = AwaitOperation ([Windows.Graphics.Imaging.BitmapEncoder]::CreateAsync([Windows.Graphics.Imaging.BitmapEncoder]::JpegEncoderId, $outputStream)) ([Windows.Graphics.Imaging.BitmapEncoder])
+            $encoder = AwaitOperation ([Windows.Graphics.Imaging.BitmapEncoder]::CreateAsync([Windows.Graphics.Imaging.BitmapEncoder]::HeifEncoderId, $outputStream)) ([Windows.Graphics.Imaging.BitmapEncoder])
             $encoder.SetSoftwareBitmap($bitmap)
             $encoder.IsThumbnailGenerated = $true
 

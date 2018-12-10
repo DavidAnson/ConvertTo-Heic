@@ -1,15 +1,23 @@
-# ConvertTo-Jpeg
+# ConvertTo-Heic
 
-> A PowerShell script that converts RAW (and other) image files to the widely-supported JPEG format
+> A PowerShell script that converts image files to the efficient HEIC format
 
 ## Overview
 
-Many cameras - and many phones - save photos in a custom file format.
-Known as [RAW images](https://en.wikipedia.org/wiki/Raw_image_format), these files contain richer information than the widely-supported [JPEG format](https://en.wikipedia.org/wiki/JPEG) allows, but they are not as widely supported by tools.
-To easily view, edit, or share pictures, it can be handy to convert RAW images to the JPEG format.
-
-`ConvertTo-Jpeg.ps1` is a [PowerShell](https://en.wikipedia.org/wiki/PowerShell) script that uses the [Windows.Graphics.Imaging API](https://docs.microsoft.com/en-us/uwp/api/windows.graphics.imaging) to create a JPEG-encoded copy of each image that is passed to it.
+`ConvertTo-Heic.ps1` is a [PowerShell](https://en.wikipedia.org/wiki/PowerShell) script that uses the [Windows.Graphics.Imaging API](https://docs.microsoft.com/en-us/uwp/api/windows.graphics.imaging) to create a HEIC-encoded copy of each image that is passed to it.
 (The original file is not modified.)
+
+## Related
+
+- [ConvertTo-Jpeg.ps1](https://github.com/DavidAnson/ConvertTo-Jpeg): A PowerShell script that converts RAW (and other) image files to the widely-supported JPEG format
+
+## Requirements
+
+Windows 10's April 2018 Update (version 1803) introduced support for reading [HEIC/HEIF images](https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format) to the Windows.Graphics.Imaging API.
+Windows 10's October 2018 Update (version 1809) improved support for HEIC/HEIF images, making it possible to write them.
+`ConvertTo-Heic.ps1` requires the October 2018 Update (version 1809).
+To enable the encoder, install the Microsoft [HEIF and HEVC Media Extensions](https://www.microsoft.com/store/productId/9NTLD6MSD8BM) bundle (or else both of [HEVC Video Extensions](https://www.microsoft.com/store/productId/9NMZLZ57R3T7) and [HEIF Image Extensions](https://www.microsoft.com/store/productId/9PMMSR1CGPWG)).
+Once done, the built-in Photos app (and other programs that use the Windows.Graphics.Imaging API) will be able to work with HEIC/HEIF images.
 
 ## Examples
 
@@ -18,39 +26,26 @@ To easily view, edit, or share pictures, it can be handy to convert RAW images t
 Passing parameters:
 
 ```PowerShell
-PS C:\T> .\ConvertTo-Jpeg.ps1 C:\T\Pictures\IMG_1234.HEIC C:\T\Pictures\IMG_5678.HEIC
-C:\T\Pictures\IMG_1234.HEIC -> IMG_1234.HEIC.jpg
-C:\T\Pictures\IMG_5678.HEIC -> IMG_5678.HEIC.jpg
+PS C:\T> .\ConvertTo-Heic.ps1 C:\T\Pictures\IMG_1234.BMP C:\T\Pictures\IMG_5678.CR2
+C:\T\Pictures\IMG_1234.BMP -> IMG_1234.BMP.heic
+C:\T\Pictures\IMG_5678.CR2 -> IMG_5678.CR2.heic
 ```
 
 Pipeline via `dir`:
 
 ```PowerShell
-PS C:\T> dir C:\T\Pictures | .\ConvertTo-Jpeg.ps1
-C:\T\Pictures\IMG_1234.HEIC -> IMG_1234.HEIC.jpg
-C:\T\Pictures\IMG_5678.HEIC -> IMG_5678.HEIC.jpg
-C:\T\Pictures\Kitten.jpg [Already JPEG]
+PS C:\T> dir C:\T\Pictures | .\ConvertTo-Heic.ps1
+C:\T\Pictures\IMG_1234.BMP -> IMG_1234.BMP.heic
+C:\T\Pictures\IMG_5678.CR2 -> IMG_5678.CR2.heic
+C:\T\Pictures\Kitten.heic [Already HEIC]
 C:\T\Pictures\Notes.txt [Unsupported]
 ```
 
 Pipeline via `Get-ChildItem`:
 
 ```PowerShell
-PS C:\T> Get-ChildItem C:\T\Pictures -Filter *.HEIC | .\ConvertTo-Jpeg.ps1
-C:\T\Pictures\IMG_1234.HEIC -> IMG_1234.HEIC.jpg
-C:\T\Pictures\IMG_5678.HEIC -> IMG_5678.HEIC.jpg
-```
-
-### Renaming Files
-
-Sometimes files have the wrong extension.
-To rename JPEG-encoded files that don't have the standard `.jpg` extension, use the `-FixExtensionIfJpeg` switch.
-(The `=>` in the output indicates that the file was renamed vs. converted.)
-
-```PowerShell
-PS C:\T> dir C:\T\Pictures\*.HEIC | .\ConvertTo-Jpeg.ps1 -FixExtensionIfJpeg
-C:\T\Pictures\IMG_1234 (Edited).HEIC => IMG_1234 (Edited).jpg
-C:\T\Pictures\IMG_1234.HEIC -> IMG_1234.HEIC.jpg
+PS C:\T> Get-ChildItem C:\T\Pictures -Filter *.BMP | .\ConvertTo-Heic.ps1
+C:\T\Pictures\IMG_1234.BMP -> IMG_1234.BMP.heic
 ```
 
 ## Formats
@@ -65,15 +60,8 @@ C:\T\Pictures\IMG_1234.HEIC -> IMG_1234.HEIC.jpg
 | ICO Decoder                  | .ICO .ICON |
 | JPEG Decoder                 | .EXIF .JFIF .JPE .JPEG .JPG |
 | Microsoft Camera Raw Decoder | .ARW .CR2 .CRW .DNG .ERF .KDC .MRW .NEF .NRW .ORF .PEF .RAF .RAW .RW2 .RWL .SR2 .SRW |
-| *Microsoft HEIF Decoder*     | .AVCI .AVCS .HEIC .HEICS .HEIF .HEIFS |
+| Microsoft HEIF Decoder       | .AVCI .AVCS .HEIC .HEICS .HEIF .HEIFS |
 | Microsoft Webp Decoder       | .WEBP |
 | PNG Decoder                  | .PNG |
 | TIFF Decoder                 | .TIF .TIFF |
 | WMPhoto Decoder              | .JXR .WDP |
-
-## HEIC/HEIF
-
-Windows 10's April 2018 Update (version 1803) added support for [HEIC/HEIF images](https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format) to the Windows.Graphics.Imaging API.
-`ConvertTo-Jpeg.ps1` uses the new decoder automatically if it's available.
-To enable the decoder, install the Microsoft [HEIF and HEVC Media Extensions](https://www.microsoft.com/store/productId/9NTLD6MSD8BM) bundle (or else both of [HEVC Video Extensions](https://www.microsoft.com/store/productId/9NMZLZ57R3T7) and [HEIF Image Extensions](https://www.microsoft.com/store/productId/9PMMSR1CGPWG)).
-Once done, the built-in Photos app (and other programs that use the Windows.Graphics.Imaging API) will be able to open HEIC/HEIF images.
